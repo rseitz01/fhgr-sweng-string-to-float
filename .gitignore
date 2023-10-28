@@ -1,5 +1,6 @@
 *.obsidian
 *.vim
+*.swp
 bin/
 obj/
 compile_flags.txt

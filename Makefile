@@ -1,12 +1,14 @@
 GIT_VER := "$(shell git describe --abbrev=4 --dirty --always --tags)"
 CC	    := gcc
-LDFLAGS := #-rdynamic -pg \
-		   #-fsanitize=address
 CFLAGS  := -Wall -Wextra \
 		   -O3 -march=native \
 		   -I"include" \
+		   #-lm \
 		   #-rdynamic -pg \
 		   #-fsanitize=address
+LDFLAGS := #-rdynamic -pg \
+		   #-fsanitize=address
+LDLIBS  := -lm
 
 BIN_DIR := bin
 OBJ_DIR := obj
@@ -16,11 +18,12 @@ CSUFFIX := .c
 ####### LINKING FUNCTION : $(call link,LDFLAGS,EXECUTABLE,PATH/TO/FILE.o PATH/TO/ANOTHERFILE.o)
 # arguments
 # 1: [IN]  linker options (LDFLAGS)
-# 2: [OUT] executable output
-# 3: [IN]  path/to/file.o path/to/anotherfile.o
+# 2: [IN]  linker libraries (LDLIBS)
+# 3: [OUT] executable output
+# 4: [IN]  path/to/file.o path/to/anotherfile.o
 define link
 	@echo link	: $@ $^
-	@$(CC) $1 -o $2 $3
+	@$(CC) $1 -o $3 $4 $2
 endef
 
 ####### COMPILATION FUNCTION : $(call compile,CFLAGS,OBJ_DIR,PATH/FILE.o)
@@ -38,13 +41,14 @@ endef
 # arguments
 # 1: [IN]  compile options
 # 2: [IN]  linker options
-# 3: [IN]  object directory
-# 4: [OUT] binary path
-# 5: [IN]  source files
+# 3: [IN]  linker libraries
+# 4: [IN]  object directory
+# 5: [OUT] binary path
+# 6: [IN]  source files
 define binary
-BIN_DIR := $$(patsubst %/,%,$$(dir $4))
-OBJ_DIR := $3
-C_FILES := $5
+BIN_DIR := $$(patsubst %/,%,$$(dir $5))
+OBJ_DIR := $4
+C_FILES := $6
 C_DIRS  := $$(patsubst %/,%,$$(dir $$(C_FILES)))
 O_FILES := $$(addprefix $$(OBJ_DIR)/,$$(addsuffix .o,$$(notdir $$(basename $$(C_FILES)))))
 D_FILES := $$(addprefix $$(OBJ_DIR)/,$$(addsuffix .d,$$(notdir $$(basename $$(C_FILES)))))
@@ -65,8 +69,8 @@ endif
 
 $$(foreach SRC,$$(C_DIRS),$$(eval $$(call compile_job,$1,$$(OBJ_DIR),$$(SRC))))
 
-$4$$(XSUFFIX): $$(O_FILES) | $$(BIN_DIR)
-	$$(call link,$2,$$@,$$^)
+$5$$(XSUFFIX): $$(O_FILES) | $$(BIN_DIR)
+	$$(call link,$2,$3,$$@,$$^)
 
 endef
 
@@ -85,8 +89,8 @@ TARGETS := $(addsuffix $(XSUFFIX),$(JOBS))
 .phony  :  list
 all     :  $(TARGETS)
 
-$(eval $(call binary,$(CFLAGS),$(LDFLAGS),$(OBJ_DIR),bin/main,src/main.c src/string_to_float.c))
-$(eval $(call binary,$(CFLAGS),$(LDFLAGS),$(OBJ_DIR),bin/test,src/test.c src/unity.c src/string_to_float.c))
+$(eval $(call binary,$(CFLAGS),$(LDFLAGS),$(LDLIBS),$(OBJ_DIR),bin/main,src/main.c src/string_to_float.c))
+$(eval $(call binary,$(CFLAGS) -DUNITY_INCLUDE_DOUBLE -DUNITY_DOUBLE_PRECISION=1e-12,$(LDFLAGS),$(LDLIBS),$(OBJ_DIR),bin/test,src/test.c src/unity.c src/string_to_float.c))
 
 list:
 	@echo possible binaries
