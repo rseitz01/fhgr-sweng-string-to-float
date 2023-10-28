@@ -1,0 +1,6 @@
+*.obsidian
+*.vim
+bin/
+obj/
+compile_flags.txt
+
