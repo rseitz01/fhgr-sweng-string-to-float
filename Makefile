@@ -90,7 +90,7 @@ TARGETS := $(addsuffix $(XSUFFIX),$(JOBS))
 all     :  $(TARGETS)
 
 $(eval $(call binary,$(CFLAGS),$(LDFLAGS),$(LDLIBS),$(OBJ_DIR),bin/main,src/main.c src/string_to_float.c))
-$(eval $(call binary,$(CFLAGS) -DUNITY_INCLUDE_DOUBLE -DUNITY_DOUBLE_PRECISION=1e-12,$(LDFLAGS),$(LDLIBS),$(OBJ_DIR),bin/test,src/test.c src/unity.c src/string_to_float.c))
+$(eval $(call binary,$(CFLAGS) -DUNITY_INCLUDE_DOUBLE -DUNITY_DOUBLE_PRECISION=1e-15,$(LDFLAGS),$(LDLIBS),$(OBJ_DIR),bin/test,src/test.c src/unity.c src/string_to_float.c))
 
 list:
 	@echo possible binaries
