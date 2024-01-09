@@ -1,9 +1,10 @@
 GIT_VER := "$(shell git describe --abbrev=4 --dirty --always --tags)"
 CC	    := gcc
 CFLAGS  := -Wall -Wextra \
-		   -O3 -march=native \
+		   -Og \
 		   -I"include" \
 		   #-lm \
+		   -O3 -march=native \
 		   #-rdynamic -pg \
 		   #-fsanitize=address
 LDFLAGS := #-rdynamic -pg \
@@ -74,7 +75,7 @@ $5$$(XSUFFIX): $$(O_FILES) | $$(BIN_DIR)
 
 endef
 
-####### Random Windows stuff 
+####### Random Windows stuff
 ifeq ($(OS),Windows_NT)
 ifeq ($(XSUFFIX),)
 XSUFFIX := .exe
