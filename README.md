@@ -7,6 +7,8 @@
 - convert positive / negative integers (e.g. `12`)
 - convert positive / negative floating point numbers (e.g. `-12.34`)
 - convert positive / negative floating point numbers with exponents (e.g. `+12.34e-56`)
+- convert any capitalization of 'NAN' to an actual `nan`
+- return `nan` for invalid input and set `errno = EINVAL`
 - allows incomplete inputs (e.g. `.12`, `12.`, `.12e3`, `-.12e+3`; but not `-.12e`, `-e23`)
 - precision of 15 decimal places
 - ignores leading + trailing whitespace
@@ -25,11 +27,22 @@ make
     - `bin/main` (ignore this one)
 
 ### if all else fails
+
 ```sh
 ./compile_test.sh
 ```
 
 - will create `bin/test`
+
+### cleaning
+
+```sh
+make clean
+```
+
+### please ignore
+
+- the file named `compile_flags.txt` is only used so my lsp knows what's up
 
 ## Running Tests
 
