@@ -1,14 +1,17 @@
 GIT_VER := "$(shell git describe --abbrev=4 --dirty --always --tags)"
 CC	    := gcc
-CFLAGS  := -Wall -Wextra \
-		   -Og \
-		   -I"include" \
-		   #-lm \
+CFLAGS  := -Wall -Wextra -Wpedantic \
 		   -O3 -march=native \
+		   -I"include" \
+		   -fsanitize=address
+		   #-lm \
+		   -Og \
 		   #-rdynamic -pg \
-		   #-fsanitize=address
-LDFLAGS := #-rdynamic -pg \
-		   #-fsanitize=address
+
+LDFLAGS := -fsanitize=address \
+		   #-rdynamic -pg \
+
+
 LDLIBS  := -lm
 
 BIN_DIR := bin
@@ -35,7 +38,7 @@ endef
 define compile_job
 $2/%.o: $3/%.c Makefile | $2
 	@echo compile : $$<
-	@$$(CC) $1 -DVERSION=\"$$(GIT_VER)\" -c -MMD -MP -o $$(addprefix $2/,$$(notdir $$(basename $$<)).o) $$<
+	@$$(CC) $1 -DVERSION=\"$$(GIT_VER)\" -c -MMD -o $$(addprefix $2/,$$(notdir $$(basename $$<)).o) $$<
 endef
 
 ####### CREATE BINARY FUNCTION : $(call CFLAGS,LDFLAGS,OBJ_DIR,BIN_PATH,PATH/TO/FILE.c PATH/TO/ANOTHERFILE.c)

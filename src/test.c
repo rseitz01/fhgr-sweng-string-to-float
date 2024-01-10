@@ -7,7 +7,6 @@
 #define PRECISION 15
 
 
-
 void setUp(void)
 {
 }
@@ -26,7 +25,7 @@ void test_int(char *fmt, size_t v, double expect)
     snprintf(buf, 128, fmt, v);
     double actual = string_to_float(buf);
     char msg[128] = {0};
-    snprintf(msg, 128, "(format '%s'), %zu", fmt, v);
+    snprintf(msg, 128, "(format '%s' -> expect %.17g is %.17g)", fmt, expect, actual);
     if(expect != expect) {
         /* IEEE standard: f != f -> true only for NaN */
         /* however, unity.h isn't the IEEE standard and the function does exactly what is says */
@@ -34,12 +33,12 @@ void test_int(char *fmt, size_t v, double expect)
         TEST_ASSERT_EQUAL_MESSAGE(EINVAL, errno, msg);
     } else {
         TEST_ASSERT_EQUAL_MESSAGE(0, errno, msg);
-        double e = pow(10, round(log10(expect)) - PRECISION);
+        double e = pow(10, round(log10(fabs(expect))) - PRECISION);
         TEST_ASSERT_LESS_OR_EQUAL_DOUBLE_MESSAGE(e, fabs(expect - actual), msg);
     }
 }
 
-void test_int_pattern(size_t v)
+void test_int_pattern(ssize_t v)
 {
     test_int("%zu", v, v);
     test_int(" %zu", v, v);
@@ -52,6 +51,30 @@ void test_int_pattern(size_t v)
     test_int("ABC%zu ", v, NAN);
     test_int("ABC%zuABC", v, NAN);
     test_int(" ABC  %zu  ABC ", v, NAN);
+    /* prefix with negative */
+    test_int("-%zu", v, -v);
+    test_int(" -%zu", v, -v);
+    test_int("-%zu ", v, -v);
+    test_int(" -%zu ", v, -v);
+    test_int("	-%zu", v, -v);
+    test_int("-%zu	", v, -v);
+    test_int(" 	 -%zu 	 ", v, -v);
+    test_int("-%zuABC", v, NAN);
+    test_int("ABC-%zu ", v, NAN);
+    test_int("ABC-%zuABC", v, NAN);
+    test_int(" ABC  -%zu  ABC ", v, NAN);
+    /* prefix with positive */
+    test_int("+%zu", v, v);
+    test_int(" +%zu", v, v);
+    test_int("+%zu ", v, v);
+    test_int(" +%zu ", v, v);
+    test_int("	+%zu", v, v);
+    test_int("+%zu	", v, v);
+    test_int(" 	 +%zu 	 ", v, v);
+    test_int("+%zuABC", v, NAN);
+    test_int("ABC+%zu ", v, NAN);
+    test_int("ABC+%zuABC", v, NAN);
+    test_int(" ABC  +%zu  ABC ", v, NAN);
 }
 
 #define TEST_INT(X) \
@@ -59,24 +82,24 @@ void test_int_pattern(size_t v)
         test_int_pattern(X); \
     }
 
-TEST_INT(0);
-TEST_INT(1);
-TEST_INT(2);
-TEST_INT(3);
-TEST_INT(4);
-TEST_INT(5);
-TEST_INT(6);
-TEST_INT(7);
-TEST_INT(8);
-TEST_INT(9);
-TEST_INT(123);
-TEST_INT(1000);
-TEST_INT(987654321);
-TEST_INT(1234567890);
-TEST_INT(999999999999999);
-TEST_INT(9999999999999999);
-TEST_INT(9007199254740992);
-TEST_INT(9007199254740993);
+TEST_INT(0)
+TEST_INT(1)
+TEST_INT(2)
+TEST_INT(3)
+TEST_INT(4)
+TEST_INT(5)
+TEST_INT(6)
+TEST_INT(7)
+TEST_INT(8)
+TEST_INT(9)
+TEST_INT(123)
+TEST_INT(1000)
+TEST_INT(987654321)
+TEST_INT(1234567890)
+TEST_INT(999999999999999)
+TEST_INT(9999999999999999)
+TEST_INT(9007199254740992)
+TEST_INT(9007199254740993)
 
 
 
@@ -117,6 +140,30 @@ void test_double_pattern(char *v, char *m, double expect, int err_expect)
     test_double("ABC%s.%s", v, m, NAN, EINVAL);
     test_double("ABC%s.%sABC", v, m, NAN, EINVAL);
     test_double(" ABC  %zu  ABC ", v, m, NAN, EINVAL);
+
+    /* prefix with negative */
+    test_double("-%s.%s", v, m, -expect, err_expect);
+    test_double(" -%s.%s", v, m, -expect, err_expect);
+    test_double("-%s.%s ", v, m, -expect, err_expect);
+    test_double("	-%s.%s", v, m, -expect, err_expect);
+    test_double("-%s.%s	", v, m, -expect, err_expect);
+    test_double(" 	 -%s.%s 	 ", v, m, -expect, err_expect);
+    test_double("-%s.%s ABC", v, m, NAN, EINVAL);
+    test_double("ABC-%s.%s", v, m, NAN, EINVAL);
+    test_double("ABC-%s.%sABC", v, m, NAN, EINVAL);
+    test_double(" ABC  %zu  ABC ", v, m, NAN, EINVAL);
+
+    /* prefix with positive */
+    test_double("+%s.%s", v, m, expect, err_expect);
+    test_double(" +%s.%s", v, m, expect, err_expect);
+    test_double("+%s.%s ", v, m, expect, err_expect);
+    test_double("	+%s.%s", v, m, expect, err_expect);
+    test_double("+%s.%s	", v, m, expect, err_expect);
+    test_double(" 	 +%s.%s 	 ", v, m, expect, err_expect);
+    test_double("+%s.%s ABC", v, m, NAN, EINVAL);
+    test_double("ABC+%s.%s", v, m, NAN, EINVAL);
+    test_double("ABC+%s.%sABC", v, m, NAN, EINVAL);
+    test_double(" ABC  %zu  ABC ", v, m, NAN, EINVAL);
 }
 
 #define STR(X)  #X
@@ -127,32 +174,32 @@ void test_double_pattern(char *v, char *m, double expect, int err_expect)
         test_double_pattern(STR(V), STR(M), E, EX); \
     }
 
-TEST_DOUBLE(0, 1, 0.1, 0);
-TEST_DOUBLE(0, 01, 0.01, 0);
-TEST_DOUBLE(0, 001, 0.001, 0);
-TEST_DOUBLE(0, 1234, 0.1234, 0);
-TEST_DOUBLE(0, 12345, 0.12345, 0);
-TEST_DOUBLE(0, 123456, 0.123456, 0);
-TEST_DOUBLE(0, 1234567, 0.1234567, 0);
-TEST_DOUBLE(0, 12345678, 0.12345678, 0);
-TEST_DOUBLE(0, 123456789, 0.123456789, 0);
-TEST_DOUBLE(900719925474099, 2, 900719925474099, 0);
-TEST_DOUBLE(90071992547409, 92, 90071992547409.92, 0);
-TEST_DOUBLE(9007199254740, 992, 9007199254740.992, 0);
-TEST_DOUBLE(900719925474, 0992, 900719925474.0992, 0);
-TEST_DOUBLE(90071992547, 40992, 90071992547.40992, 0);
-TEST_DOUBLE(9007199254, 740992, 9007199254.740992, 0);
-TEST_DOUBLE(900719925, 4740992, 900719925.4740992, 0);
-TEST_DOUBLE(90071992, 54740992, 90071992.54740992, 0);
-TEST_DOUBLE(9007199, 254740992, 9007199.254740992, 0);
-TEST_DOUBLE(900719, 9254740992, 900719.9254740992, 0);
-TEST_DOUBLE(90071, 99254740992, 90071.99254740992, 0);
-TEST_DOUBLE(9007, 199254740992, 9007.199254740992, 0);
-TEST_DOUBLE(900, 7199254740992, 900.7199254740992, 0);
-TEST_DOUBLE(90, 07199254740992, 90.07199254740992, 0);
-TEST_DOUBLE(9, 007199254740992, 9.007199254740992, 0);
-TEST_DOUBLE(0,9007199254740992,0.9007199254740992, 0);
-TEST_DOUBLE(900719925474099, 0, 900719925474099, 0);
+TEST_DOUBLE(0, 1, 0.1, 0)
+TEST_DOUBLE(0, 01, 0.01, 0)
+TEST_DOUBLE(0, 001, 0.001, 0)
+TEST_DOUBLE(0, 1234, 0.1234, 0)
+TEST_DOUBLE(0, 12345, 0.12345, 0)
+TEST_DOUBLE(0, 123456, 0.123456, 0)
+TEST_DOUBLE(0, 1234567, 0.1234567, 0)
+TEST_DOUBLE(0, 12345678, 0.12345678, 0)
+TEST_DOUBLE(0, 123456789, 0.123456789, 0)
+TEST_DOUBLE(900719925474099, 2, 900719925474099, 0)
+TEST_DOUBLE(90071992547409, 92, 90071992547409.92, 0)
+TEST_DOUBLE(9007199254740, 992, 9007199254740.992, 0)
+TEST_DOUBLE(900719925474, 0992, 900719925474.0992, 0)
+TEST_DOUBLE(90071992547, 40992, 90071992547.40992, 0)
+TEST_DOUBLE(9007199254, 740992, 9007199254.740992, 0)
+TEST_DOUBLE(900719925, 4740992, 900719925.4740992, 0)
+TEST_DOUBLE(90071992, 54740992, 90071992.54740992, 0)
+TEST_DOUBLE(9007199, 254740992, 9007199.254740992, 0)
+TEST_DOUBLE(900719, 9254740992, 900719.9254740992, 0)
+TEST_DOUBLE(90071, 99254740992, 90071.99254740992, 0)
+TEST_DOUBLE(9007, 199254740992, 9007.199254740992, 0)
+TEST_DOUBLE(900, 7199254740992, 900.7199254740992, 0)
+TEST_DOUBLE(90, 07199254740992, 90.07199254740992, 0)
+TEST_DOUBLE(9, 007199254740992, 9.007199254740992, 0)
+TEST_DOUBLE(0,9007199254740992,0.9007199254740992, 0)
+TEST_DOUBLE(900719925474099, 0, 900719925474099, 0)
 
 void test_exponent_pattern(char *b, char *e, double expect, int err_expect)
 {
@@ -210,38 +257,38 @@ void test_exponent_minus_pattern(char *b, char *e, double expect, int err_expect
 }
 
 
-TEST_EXPONENT(0, 1, 0, 0);
-TEST_EXPONENT(0, 01, 0, 0);
-TEST_EXPONENT(0, 001, 0, 0);
-TEST_EXPONENT(1, 0, 1e0, 0);
-TEST_EXPONENT(1, 1, 1e1, 0);
-TEST_EXPONENT(1, 2, 1e2, 0);
-TEST_EXPONENT(1, 6, 1e6, 0);
-TEST_EXPONENT(1, 100, 1e100, 0);
-TEST_EXPONENT(100, 0, 100e0, 0);
-TEST_EXPONENT(100, 1, 100e1, 0);
-TEST_EXPONENT(100, 2, 100e2, 0);
-TEST_EXPONENT(100, 6, 100e6, 0);
-TEST_EXPONENT(100, 100, 100e100, 0);
+TEST_EXPONENT(0, 1, 0, 0)
+TEST_EXPONENT(0, 01, 0, 0)
+TEST_EXPONENT(0, 001, 0, 0)
+TEST_EXPONENT(1, 0, 1e0, 0)
+TEST_EXPONENT(1, 1, 1e1, 0)
+TEST_EXPONENT(1, 2, 1e2, 0)
+TEST_EXPONENT(1, 6, 1e6, 0)
+TEST_EXPONENT(1, 100, 1e100, 0)
+TEST_EXPONENT(100, 0, 100e0, 0)
+TEST_EXPONENT(100, 1, 100e1, 0)
+TEST_EXPONENT(100, 2, 100e2, 0)
+TEST_EXPONENT(100, 6, 100e6, 0)
+TEST_EXPONENT(100, 100, 100e100, 0)
 
 #define TEST_EXPONENT_MINUS(V, M, E, EX) \
     void test_##V##_exponent_minus_##M(void) { \
         test_exponent_minus_pattern(STR(V), STR(M), E, EX); \
     }
 
-TEST_EXPONENT_MINUS(0, 1, 0, 0);
-TEST_EXPONENT_MINUS(0, 01, 0, 0);
-TEST_EXPONENT_MINUS(0, 001, 0, 0);
-TEST_EXPONENT_MINUS(1, 0, 1e-0, 0);
-TEST_EXPONENT_MINUS(1, 1, 1e-1, 0);
-TEST_EXPONENT_MINUS(1, 2, 1e-2, 0);
-TEST_EXPONENT_MINUS(1, 6, 1e-6, 0);
-TEST_EXPONENT_MINUS(1, 100, 1e-100, 0);
-TEST_EXPONENT_MINUS(100, 0, 100e-0, 0);
-TEST_EXPONENT_MINUS(100, 1, 100e-1, 0);
-TEST_EXPONENT_MINUS(100, 2, 100e-2, 0);
-TEST_EXPONENT_MINUS(100, 6, 100e-6, 0);
-TEST_EXPONENT_MINUS(100, 100, 100e-100, 0);
+TEST_EXPONENT_MINUS(0, 1, 0, 0)
+TEST_EXPONENT_MINUS(0, 01, 0, 0)
+TEST_EXPONENT_MINUS(0, 001, 0, 0)
+TEST_EXPONENT_MINUS(1, 0, 1e-0, 0)
+TEST_EXPONENT_MINUS(1, 1, 1e-1, 0)
+TEST_EXPONENT_MINUS(1, 2, 1e-2, 0)
+TEST_EXPONENT_MINUS(1, 6, 1e-6, 0)
+TEST_EXPONENT_MINUS(1, 100, 1e-100, 0)
+TEST_EXPONENT_MINUS(100, 0, 100e-0, 0)
+TEST_EXPONENT_MINUS(100, 1, 100e-1, 0)
+TEST_EXPONENT_MINUS(100, 2, 100e-2, 0)
+TEST_EXPONENT_MINUS(100, 6, 100e-6, 0)
+TEST_EXPONENT_MINUS(100, 100, 100e-100, 0)
 
 void test_mixed_pattern(char *m, char *e, double expect, double expect2, int err_expect)
 {
@@ -451,19 +498,19 @@ void test_mixed_pattern(char *m, char *e, double expect, double expect2, int err
         test_mixed_pattern(STR(V) "." STR(B), STR(M), E, E2, EX); \
     }
 
-TEST_MIXED(0, 3255, 1, 0.3255e1, 0.3255e-1, 0);
-TEST_MIXED(0, 125, 01, 0.125e01, 0.125e-01, 0);
-TEST_MIXED(0, 0953, 001, 0.0953e001, 0.0953e-001, 0);
-TEST_MIXED(1, 9350, 0, 1.9350e0, 1.9350e-0, 0);
-TEST_MIXED(1, 0235, 1, 1.0235e1, 1.0235e-1, 0);
-TEST_MIXED(1, 25125, 2, 1.25125e2, 1.25125e-2, 0);
-TEST_MIXED(1, 36431, 6, 1.36431e6, 1.36431e-6, 0);
-TEST_MIXED(1, 3523, 100, 1.3523e100, 1.3523e-100, 0);
-TEST_MIXED(100, 12345, 0, 100.12345e0, 100.12345e-0, 0);
-TEST_MIXED(100, 345, 1, 100.345e1, 100.345e-1, 0);
-TEST_MIXED(100, 643, 2, 100.643e2, 100.643e-2, 0);
-TEST_MIXED(100, 34634, 6, 100.34634e6, 100.34634e-6, 0);
-TEST_MIXED(100, 235, 100, 100.235e100, 100.235e-100, 0);
+TEST_MIXED(0, 3255, 1, 0.3255e1, 0.3255e-1, 0)
+TEST_MIXED(0, 125, 01, 0.125e01, 0.125e-01, 0)
+TEST_MIXED(0, 0953, 001, 0.0953e001, 0.0953e-001, 0)
+TEST_MIXED(1, 9350, 0, 1.9350e0, 1.9350e-0, 0)
+TEST_MIXED(1, 0235, 1, 1.0235e1, 1.0235e-1, 0)
+TEST_MIXED(1, 25125, 2, 1.25125e2, 1.25125e-2, 0)
+TEST_MIXED(1, 36431, 6, 1.36431e6, 1.36431e-6, 0)
+TEST_MIXED(1, 3523, 100, 1.3523e100, 1.3523e-100, 0)
+TEST_MIXED(100, 12345, 0, 100.12345e0, 100.12345e-0, 0)
+TEST_MIXED(100, 345, 1, 100.345e1, 100.345e-1, 0)
+TEST_MIXED(100, 643, 2, 100.643e2, 100.643e-2, 0)
+TEST_MIXED(100, 34634, 6, 100.34634e6, 100.34634e-6, 0)
+TEST_MIXED(100, 235, 100, 100.235e100, 100.235e-100, 0)
 
 void test_nan(void)
 {
@@ -501,11 +548,18 @@ void test_incomplete(void)
     TEST_ASSERT_EQUAL_MESSAGE(0, errno, "(errno)");
     TEST_ASSERT_FLOAT_IS_NAN_MESSAGE(string_to_float("e21"), "testing e21");
     TEST_ASSERT_EQUAL_MESSAGE(EINVAL, errno, "(errno)");
+    TEST_ASSERT_LESS_OR_EQUAL_DOUBLE_MESSAGE(-.1e12, string_to_float("-.1e12"), "testing -.1e12");
+    TEST_ASSERT_EQUAL_MESSAGE(0, errno, "(errno)");
+    TEST_ASSERT_FLOAT_IS_NAN_MESSAGE(string_to_float("-.1e-"), "testing -.1e-");
+    TEST_ASSERT_EQUAL_MESSAGE(EINVAL, errno, "(errno)");
+    TEST_ASSERT_FLOAT_IS_NAN_MESSAGE(string_to_float("1d"), "testing 1d");
+    TEST_ASSERT_EQUAL_MESSAGE(EINVAL, errno, "(errno)");
 }
 
-int main()
+int main(void)
 {
     UNITY_BEGIN();
+
     /* integer inputs */
     RUN_TEST(test_int_0);
     RUN_TEST(test_int_1);
@@ -594,6 +648,7 @@ int main()
     RUN_TEST(test_mixed_100_34634_exponent_6);
     RUN_TEST(test_mixed_100_235_exponent_100);
 
+    /* other tests */
     RUN_TEST(test_nan);
     RUN_TEST(test_incomplete);
 

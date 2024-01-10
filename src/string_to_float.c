@@ -8,64 +8,17 @@
 
 #include "string_to_float.h"
 
-typedef union DoubleU64 {
-    uint64_t u;
-    double d;
-} DoubleU64;
-
-double sign_exponent_mantissa_to_double(int sign, int64_t exponent, uint64_t mantissa)
-{
-    DoubleU64 result = {0};
-    uint64_t bits_m = 52; /* 52 mantissa bits */
-    uint64_t bits_e = 11; /* 11 exponent bits */
-    uint64_t bits_s = 1; /* 1 sign bit */
-    uint64_t mask_m = ~(((uint64_t)(-1LL)) << bits_m);
-    uint64_t mask_e = ~(((uint64_t)(-1LL)) << bits_e);
-    uint64_t mask_s = ~(((uint64_t)(-1LL)) << bits_s);
-    int64_t bias = mask_e >> 1;
-    uint64_t mantissa_mod = mantissa;
-    //for(size_t i = 0; i < exponent; i++) {
-    //    mantissa_mod *= 10;
-    //}
-    if(mantissa_mod) {
-        size_t shifts = 0;
-        for(shifts = 0; !(mantissa_mod & ~mask_m); shifts++) {
-            mantissa_mod <<= 1;
-        }
-        bias += (bits_m - shifts);
-        //printf("shifts %zu\n", shifts);
-    } else {
-        bias = 0;
-    }
-#if 0
-    printf("bias: %016lX\n", bias);
-    printf("mod: %016lX\n", mantissa_mod);
-    printf("%016lX\n", mask_m),
-    printf("%016lX\n", mask_e),
-    printf("%016lX\n", mask_s),
-#endif
-    result.u |= (mantissa_mod & mask_m) << 0;
-    result.u |= ((exponent + bias) & mask_e) << (bits_m);
-    result.u |= (sign & mask_s) << (bits_m + bits_e);
-    return result.d;
-}
-
-
 double string_to_float_s(char *str, size_t len)
 {
-    //printf("str %s\n", str);
     errno = 0;
     if(!str) {
         errno = EINVAL;
         return -INFINITY;
     }
-    //int found_exponent_digits = 0;
     size_t i = 0, n_integer = 0, n_fraction = 0, n_exponent = 0;
-    double integer = 0;
-    double integer_sign = 1;
+    double integer = 0, integer_sign = 1;
     double fraction = 0;
-    double exponent = 0;
-    double exponent_sign = 1;
+    double exponent = 0, exponent_sign = 1;
     double result = 0;
     /* skip leading whitespace */
     while(i < len && isspace((int)str[i])) {
